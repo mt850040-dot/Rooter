@@ -1,8 +1,0 @@
-{
-  "name": "router-whitelist",
-  "version": "1.0.0",
-  "type": "commonjs",
-  "dependencies": {
-    "node-ssh": "^13.1.0"
-  }
-}

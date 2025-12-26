@@ -1,0 +1,96 @@
+const fs = require("fs");
+const PREFIX = "192.168.100";
+const FILE_PATH = "./ipList.json";
+
+// Charger la liste depuis le fichier au démarrage
+let ipList = [];
+if (fs.existsSync(FILE_PATH)) {
+  try {
+    ipList = JSON.parse(fs.readFileSync(FILE_PATH, "utf8"));
+  } catch (e) {
+    console.error("Erreur lecture ipList.json :", e);
+    ipList = [];
+  }
+}
+
+// Fonction pour sauvegarder automatiquement
+function saveIPList() {
+  fs.writeFileSync(FILE_PATH, JSON.stringify(ipList, null, 2));
+}
+
+function isValidSuffix(suffix) {
+  const n = Number(suffix);
+  return Number.isInteger(n) && n >= 1 && n <= 254;
+}
+
+function addIP(suffix) {
+  if (!isValidSuffix(suffix)) {
+    return "❌ Suffixe invalide (1 à 254)";
+  }
+
+  const ip = `${PREFIX}.${suffix}`;
+
+  if (ipList.includes(ip)) {
+    return `⚠️ L'IP ${ip} existe déjà`;
+  }
+
+  ipList.push(ip);
+  saveIPList(); // sauvegarde après ajout
+  return `✅ IP ajoutée : ${ip}`;
+}
+
+function removeIP(suffix) {
+  if (!isValidSuffix(suffix)) {
+    return "❌ Suffixe invalide (1 à 254)";
+  }
+
+  const ip = `${PREFIX}.${suffix}`;
+
+  const index = ipList.indexOf(ip);
+  if (index === -1) {
+    return `⚠️ L'IP ${ip} n'existe pas`;
+  }
+
+  ipList.splice(index, 1);
+  saveIPList(); // sauvegarde après suppression
+  return `🗑️ IP supprimée : ${ip}`;
+}
+
+function showIPs() {
+  if (ipList.length === 0) {
+    return "📭 Aucune IP enregistrée";
+  }
+
+  return "📋 IP enregistrées :\n" + ipList.join("\n");
+}
+
+async function handleIPCommand(message, sender, OWNER) {
+  if (sender !== OWNER) {
+    return "⛔ Commande réservée à l’administrateur";
+  }
+
+  const parts = message.trim().split(" ");
+
+  if (parts.length < 2 || parts[0] !== "!ip") {
+    return null;
+  }
+
+  const action = parts[1];
+  const suffix = parts[2];
+
+  switch (action) {
+    case "add":
+      return addIP(suffix);
+
+    case "remove":
+      return removeIP(suffix);
+
+    case "show":
+      return showIPs();
+
+    default:
+      return "❓ Commande inconnue\nExemple : !ip add 25";
+  }
+}
+
+module.exports = { handleIPCommand };
